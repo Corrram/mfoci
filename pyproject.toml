@@ -4,11 +4,14 @@ version = "0.1.6"
 description = ""
 authors = ["Marcus Rockel <corram@outlook.de>"]
 readme = "README.md"
+repository = "https://github.com/Corrram/mfoci"
+documentation = "https://mfoci.readthedocs.io"
+
+[tool.poetry.urls]
+"Issue Tracker" = "https://github.com/Corrram/mfoci/issues"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-# stock_loader = {path = "../../finadvisor/stock-loader", develop = true}
-# eikon_api_wrapper = {path = "../../eikon_api_wrapper", develop = true}
 numpy = "^2.0"
 pandas = "^2.2"
 pandas-datareader = "^0.10"

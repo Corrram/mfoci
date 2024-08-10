@@ -4,6 +4,9 @@ log = logging.getLogger(__name__)
 
 
 def filter_for_common_indices(factors, response_vars):
+    """
+    Filter factors and response variables for common indices.
+    """
     common_idx = response_vars.index.intersection(factors.index)
     filtered_response_vars = response_vars.loc[common_idx]
     filtered_factors = factors.loc[common_idx]
