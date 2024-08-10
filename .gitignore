@@ -1,3 +1,5 @@
 /dist/
 /mfoci/data/
 /mfoci/methods/*.csv
+/docs/build/
+/.idea/
