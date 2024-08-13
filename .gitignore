@@ -3,3 +3,4 @@
 /mfoci/methods/*.csv
 /docs/build/
 /.idea/
+*.pyc

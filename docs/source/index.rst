@@ -7,10 +7,9 @@ mfoci documentation
 ===================
 
 **mfoci** is a package designed for model-free variable selection.
+It accompanies the `An Empirical Study on New Model-Free Multi-output Variable Selection Methods <https://books.google.de/books?hl=de&lr=&id=IfIYEQAAQBAJ&oi=fnd&pg=PA9&ots=aX6lT9Ev0C&sig=BHX0AtZ8tLtMIcCFDRnMch-TbPg&redir_esc=y#v=onepage&q&f=false>`_ article released in the book ` Combining, Modelling and Analyzing Imprecision, Randomness and Dependence <https://link.springer.com/chapter/10.1007/978-3-031-65993-5_2>`_.
 
-.. It accompanies the `Model-free variable selection for high-dimensional data <https://www.degruyter.com/document/doi/10.1515/demo-2024-0002/html>`_ article released in the Dependence Modeling journal.
-
-** Basic usage**
+**Basic usage**
 
 .. code-block:: python
 
