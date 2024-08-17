@@ -12,6 +12,17 @@ files = [
 ]
 
 [[package]]
+name = "appdirs"
+version = "1.4.4"
+description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+optional = false
+python-versions = "*"
+files = [
+    {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
+    {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
+]
+
+[[package]]
 name = "babel"
 version = "2.16.0"
 description = "Internationalization utilities"
@@ -289,6 +300,28 @@ docs = ["furo", "sphinx (>=7.2)", "sphinx-copybutton"]
 mypy = ["contourpy[bokeh,docs]", "docutils-stubs", "mypy (==1.8.0)", "types-Pillow"]
 test = ["Pillow", "contourpy[test-no-images]", "matplotlib"]
 test-no-images = ["pytest", "pytest-cov", "pytest-xdist", "wurlitzer"]
+
+[[package]]
+name = "copul"
+version = "0.0.10"
+description = "Mathematical computation and visualization of bivariate copulas."
+optional = false
+python-versions = "<4.0,>=3.10"
+files = [
+    {file = "copul-0.0.10-py3-none-any.whl", hash = "sha256:566685ac1de7ee2a429c118ec4d59b613343bfbdff91e88901bacbc63db16aff"},
+    {file = "copul-0.0.10.tar.gz", hash = "sha256:726d7d70bd381f879c9b0189c659815bb214649ee8d984222f73686cc5978104"},
+]
+
+[package.dependencies]
+interval = ">=1.0,<2.0"
+matplotlib = ">=3.8,<4.0"
+numpy = ">=2.0,<3.0"
+pandas = ">=2.2,<3.0"
+pillow = ">=10.3,<11.0"
+scipy = ">=1.14,<2.0"
+statsmodels = ">=0.14,<0.15"
+sympy = ">=1.12,<2.0"
+sympy-plot-backends = ">=3.1,<4.0"
 
 [[package]]
 name = "coverage"
@@ -574,6 +607,17 @@ python-versions = ">=3.7"
 files = [
     {file = "iniconfig-2.0.0-py3-none-any.whl", hash = "sha256:b6a85871a79d2e3b22d2d1b94ac2824226a63c6b741c88f7ae975f18b6778374"},
     {file = "iniconfig-2.0.0.tar.gz", hash = "sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3"},
+]
+
+[[package]]
+name = "interval"
+version = "1.0.0"
+description = "Python interval and interval set implementation"
+optional = false
+python-versions = "*"
+files = [
+    {file = "interval-1.0.0.tar.bz2", hash = "sha256:6619937f3fcb5cf85bb3a60b4e4391664e8d7b30ae3dc4d04c3fc1d063ff1c3b"},
+    {file = "interval-1.0.0.zip", hash = "sha256:912c1175179ef8f7d22d204da00345c3af0e4625918a8e6020e7e629604e8c8e"},
 ]
 
 [[package]]
@@ -1002,6 +1046,34 @@ python-dateutil = ">=2.7"
 
 [package.extras]
 dev = ["meson-python (>=0.13.1)", "numpy (>=1.25)", "pybind11 (>=2.6)", "setuptools (>=64)", "setuptools_scm (>=7)"]
+
+[[package]]
+name = "mergedeep"
+version = "1.3.4"
+description = "A deep merge function for 🐍."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "mergedeep-1.3.4-py3-none-any.whl", hash = "sha256:70775750742b25c0d8f36c55aed03d24c3384d17c951b3175d898bd778ef0307"},
+    {file = "mergedeep-1.3.4.tar.gz", hash = "sha256:0096d52e9dad9939c3d975a774666af186eda617e6ca84df4c94dec30004f2a8"},
+]
+
+[[package]]
+name = "mpmath"
+version = "1.3.0"
+description = "Python library for arbitrary-precision floating-point arithmetic"
+optional = false
+python-versions = "*"
+files = [
+    {file = "mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"},
+    {file = "mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f"},
+]
+
+[package.extras]
+develop = ["codecov", "pycodestyle", "pytest (>=4.6)", "pytest-cov", "wheel"]
+docs = ["sphinx"]
+gmpy = ["gmpy2 (>=2.1.0a4)"]
+tests = ["pytest (>=4.6)"]
 
 [[package]]
 name = "multitasking"
@@ -1816,6 +1888,46 @@ develop = ["colorama", "cython (>=0.29.33)", "cython (>=3.0.10,<4)", "flake8", "
 docs = ["ipykernel", "jupyter-client", "matplotlib", "nbconvert", "nbformat", "numpydoc", "pandas-datareader", "sphinx"]
 
 [[package]]
+name = "sympy"
+version = "1.13.2"
+description = "Computer algebra system (CAS) in Python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "sympy-1.13.2-py3-none-any.whl", hash = "sha256:c51d75517712f1aed280d4ce58506a4a88d635d6b5dd48b39102a7ae1f3fcfe9"},
+    {file = "sympy-1.13.2.tar.gz", hash = "sha256:401449d84d07be9d0c7a46a64bd54fe097667d5e7181bfe67ec777be9e01cb13"},
+]
+
+[package.dependencies]
+mpmath = ">=1.1.0,<1.4"
+
+[package.extras]
+dev = ["hypothesis (>=6.70.0)", "pytest (>=7.1.0)"]
+
+[[package]]
+name = "sympy-plot-backends"
+version = "3.4.1"
+description = "Backends for plotting with SymPy"
+optional = false
+python-versions = "*"
+files = [
+    {file = "sympy_plot_backends-3.4.1-py3-none-any.whl", hash = "sha256:6263c9fad4adb1bbecae8e5f79d9b2123bb37d760e1c7f0461d7096cfec6a4c3"},
+    {file = "sympy_plot_backends-3.4.1.tar.gz", hash = "sha256:41a0ac6c97feaf16374d8d41bd59b01da556d55fc7dddc64706752c38e54f2de"},
+]
+
+[package.dependencies]
+appdirs = ">=1.4.4"
+matplotlib = ">3.4.2"
+mergedeep = ">=1.3.4"
+numpy = ">=1.21.1"
+packaging = "*"
+sympy = ">=1.10.1"
+
+[package.extras]
+all = ["adaptive (>=0.13.1)", "av", "colorcet", "control (>=0.10.0)", "imageio", "imageio-ffmpeg", "ipympl (>=0.7.0)", "ipywidgets-bokeh", "k3d (>=2.9.7)", "notebook", "panel (>=1.0.0)", "plotly (>=4.14.3)", "psutil", "scipy (>=1.7.1)", "tqdm", "vtk"]
+dev = ["adaptive (>=0.13.1)", "av", "colorcet", "control (>=0.10.0)", "imageio", "imageio-ffmpeg", "ipympl (>=0.7.0)", "ipywidgets-bokeh", "k3d (>=2.9.7)", "kaleido", "notebook", "numpydoc", "panel (>=1.0.0)", "plotly (>=4.14.3)", "psutil", "pytest", "pytest-mock", "scipy (>=1.7.1)", "sphinx", "sphinx-rtd-theme", "tqdm", "vtk"]
+
+[[package]]
 name = "threadpoolctl"
 version = "3.5.0"
 description = "threadpoolctl"
@@ -1938,4 +2050,4 @@ repair = ["scipy (>=1.6.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "7d09eea5cc08de0f765b9a06dce80fac869687236cd4cf4a257367521a29b9d0"
+content-hash = "3d8ba94a0efe79b3e8b35e3a722fe6d6b610c93892635d643c2ada212226ae1e"

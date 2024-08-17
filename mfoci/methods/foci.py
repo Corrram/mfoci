@@ -1,4 +1,5 @@
 import decimal
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,7 @@ from scipy.stats import rankdata
 
 # Helper functions for codec
 # noinspection PyPep8Naming
-def codec(Y, Z, X=None, na_rm=True):
+def codec(Y, Z, X=None, na_rm=True) -> Union[float, dict[str, float]]:
     """
     The conditional dependence coefficient (CODEC) is a measure of the amount of
     conditional dependence between a random variable Y and a random vector Z given
@@ -56,9 +57,17 @@ def codec(Y, Z, X=None, na_rm=True):
     >>> codec_y_z_x = codec(y, z_reshaped, x)
     >>> codec_y_z = codec(y, z_reshaped)
     """
+    if isinstance(Y, pd.DataFrame):
+        results = {}
+        for i in range(Y.shape[1]):
+            result = codec(Y.iloc[:, i], Z, X, na_rm)
+            results[Y.columns[i]] = result
+        return results
     if X is None:
         if isinstance(Z, list):
             Z = np.array(Z)
+        elif isinstance(Z, pd.Series):
+            Z = Z.to_numpy()
         if len(np.shape(Z)) == 1:
             Z = Z.reshape(-1, 1)
         if not isinstance(Y, np.ndarray):
