@@ -18,6 +18,9 @@ def codec(Y, Z, X=None, na_rm=True) -> Union[float, dict[str, float]]:
 
     This implementation translates the FOCI.codec R method to Python.
 
+    IT is codec(Y,Z) = xi(Y|Z) with the notation in "An Empirical Study on New Model-Free
+    Multi-output Variable Selection Methods" by Ansari, Lütkebohmert and Rockel.
+
     Parameters
     ----------
     Y : array-like

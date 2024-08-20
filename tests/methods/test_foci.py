@@ -58,7 +58,7 @@ def test_xi_estimation_for_perfect_dependence():
     factor_cols = ["F1", "F2"]
     factors = pd.DataFrame(np.random.normal(size=(n, 2)), columns=factor_cols)
     stocks = pd.DataFrame(factors["F1"] + factors["F2"], columns=["A"])
-    estimated_xi = codec(stocks, factors)
+    estimated_xi = codec(stocks, factors)["A"]
     assert estimated_xi > 0.95
 
 
@@ -68,7 +68,7 @@ def test_xi_estimation_for_independence():
     factor_cols = ["F1", "F2"]
     factors = pd.DataFrame(np.random.normal(size=(n, 2)), columns=factor_cols)
     stocks = pd.DataFrame(np.random.normal(size=n), columns=["A"])
-    estimated_xi = codec(stocks, factors)
+    estimated_xi = codec(stocks, factors)["A"]
     assert estimated_xi < 0.05
 
 
