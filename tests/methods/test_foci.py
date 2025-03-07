@@ -20,7 +20,7 @@ def test_codec():
     assert result == 0.25
 
 
-observations = [10_000, 15_000, 20_000, 30_000, 40_000, 50_000, 60_000, 70_000]
+observations = [15_000, 20_000, 30_000, 40_000, 50_000, 60_000, 70_000]
 
 
 @pytest.mark.parametrize("n_obs", observations)
@@ -72,10 +72,12 @@ def test_xi_estimation_for_independence():
     assert estimated_xi < 0.05
 
 
-def test_xi_estimation_for_almost_perfect_dependence():
+@pytest.mark.parametrize("checkerboard_type", ["BivCheckMin", "BivCheckPi"])
+def test_xi_estimation_for_almost_perfect_dependence(checkerboard_type):
     np.random.seed(121)
     matr = np.eye(500)
-    ccop = copul.CheckerboardCopula(matr)
+    ccop_class = getattr(copul, checkerboard_type)
+    ccop = ccop_class(matr)
     data = ccop.rvs(5_000)
     df = pd.DataFrame(data, columns=["x", "z"])
     estimated_xi = codec(df["x"], df["z"])

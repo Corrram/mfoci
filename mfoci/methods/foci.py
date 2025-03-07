@@ -15,6 +15,9 @@ def codec(Y, Z, X=None, na_rm=True) -> Union[float, dict[str, float]]:
     conditional dependence between a random variable Y and a random vector Z given
     a random vector X, based on an i.i.d. sample of (Y, Z, X).
     The coefficient is asymptotically guaranteed to be between 0 and 1.
+    If X is None, the unconditional CODEC is calculated, which corresponds to xi(Y|Z)
+    from the paper "An Empirical Study on New Model-Free Multi-output Variable
+    Selection Methods" by Ansari et al.
 
     This implementation translates the FOCI.codec R method to Python.
 
