@@ -1,4 +1,4 @@
-.PHONY: setup clean install test lint format docs build
+.PHONY: setup clean install test lint format docs build all update upgrade
 
 # Default Python interpreter
 PYTHON = python
@@ -60,3 +60,7 @@ all: setup dev-install
 # Update dependencies
 update:
 	$(UV) sync --extra dev
+
+upgrade:
+	$(UV) sync --active --extra dev
+	$(UV) export --format requirements-txt --no-hashes --output-file requirements.txt --extra dev
