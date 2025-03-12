@@ -63,4 +63,4 @@ update:
 
 upgrade:
 	$(UV) sync --active --extra dev
-	$(UV) export --format requirements-txt --no-hashes --output-file requirements.txt --extra dev
+	$(UV) export --format requirements-txt --extra dev --no-hashes --output-file requirements.txt > $(if $(filter $(OS),Windows_NT),NUL,/dev/null) 2>&1

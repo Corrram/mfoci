@@ -30,7 +30,7 @@ dependencies = [
     "jinja2>=3.1",
     "yfinance>=0.2",
     "tqdm>=4.66",
-    "twine[dev]>=6.1.0",
+    "twine>=6.1.0",
 ]
 
 [project.urls]
