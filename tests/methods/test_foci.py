@@ -45,9 +45,9 @@ def test_xi_estimation_of_clayton(n_obs):
 
 def compute_xi_from_data(family, param, n_obs=20_000):
     np.random.seed(121)
-    copula = family.value(theta=param)
+    copula = family.cls(theta=param)
     log.info(f"Family: {family}, parameter: {param}")
-    data = copula.rvs(n_obs)
+    data = copula.rvs(n_obs, approximate=False)
     df = pd.DataFrame(data, columns=["x", "z"])
     xi = codec(df["x"], df["z"])
     return xi
