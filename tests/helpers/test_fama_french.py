@@ -1,13 +1,11 @@
 import pytest
 import pandas as pd
-import numpy as np
-from datetime import datetime
 from unittest.mock import patch, MagicMock
 import io
 from zipfile import ZipFile
 
 # Import the module to test
-from mfoci.factors.fama_french import get_fama_french_data
+from mfoci.helpers.fama_french import get_fama_french_data
 
 # Sample mock data in the format Kenneth French provides
 MOCK_CSV_CONTENT = """5 Factors (2x3)
@@ -29,8 +27,8 @@ def mock_response():
 
     # Create compressed bytes (mimicking a zip file)
     zip_buffer = io.BytesIO()
-    with ZipFile(zip_buffer, 'w') as zf:
-        zf.writestr('F-F_Research_Data_5_Factors_2x3_daily.CSV', MOCK_CSV_CONTENT)
+    with ZipFile(zip_buffer, "w") as zf:
+        zf.writestr("F-F_Research_Data_5_Factors_2x3_daily.CSV", MOCK_CSV_CONTENT)
 
     mock_resp.content = zip_buffer.getvalue()
     return mock_resp
@@ -38,7 +36,7 @@ def mock_response():
 
 def test_get_fama_french_data_response(mock_response):
     """Test that get_fama_french_data handles response correctly"""
-    with patch('requests.get', return_value=mock_response):
+    with patch("requests.get", return_value=mock_response):
         df = get_fama_french_data(start_date="1963-7-1", end_date="1963-7-5")
 
         # Check DataFrame structure
@@ -55,29 +53,31 @@ def test_get_fama_french_data_response(mock_response):
         assert "RF" not in df.columns  # Should be removed
 
         # Check random columns
-        assert all((df["PLA-Unif"] >= 0) & (df["PLA-Unif"] <= 1))  # Uniform distribution
+        assert all(
+            (df["PLA-Unif"] >= 0) & (df["PLA-Unif"] <= 1)
+        )  # Uniform distribution
 
         # Check index
         assert isinstance(df.index, pd.DatetimeIndex)
-        assert df.index[0] == pd.Timestamp('1963-07-01')
+        assert df.index[0] == pd.Timestamp("1963-07-01")
 
 
 def test_get_fama_french_data_date_filtering(mock_response):
     """Test date filtering in get_fama_french_data"""
-    with patch('requests.get', return_value=mock_response):
+    with patch("requests.get", return_value=mock_response):
         # Test with limited date range
         df = get_fama_french_data(start_date="1963-7-2", end_date="1963-7-3")
 
         # Check filtering worked properly
         assert len(df) == 2
-        assert df.index.min() == pd.Timestamp('1963-07-02')
-        assert df.index.max() == pd.Timestamp('1963-07-03')
+        assert df.index.min() == pd.Timestamp("1963-07-02")
+        assert df.index.max() == pd.Timestamp("1963-07-03")
 
 
 def test_get_fama_french_data_error_handling():
     """Test error handling in get_fama_french_data"""
     # Test HTTP error
-    with patch('requests.get') as mock_get:
+    with patch("requests.get") as mock_get:
         mock_get.return_value = MagicMock()
         mock_get.return_value.status_code = 404
 
@@ -85,10 +85,10 @@ def test_get_fama_french_data_error_handling():
             get_fama_french_data()
 
     # Test parsing error with invalid zip file
-    with patch('requests.get') as mock_get:
+    with patch("requests.get") as mock_get:
         mock_get.return_value = MagicMock()
         mock_get.return_value.status_code = 200
-        mock_get.return_value.content = b'Invalid content'
+        mock_get.return_value.content = b"Invalid content"
 
         with pytest.raises(ValueError, match="Failed to parse data"):
             get_fama_french_data()

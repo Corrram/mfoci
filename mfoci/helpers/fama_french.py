@@ -31,17 +31,19 @@ def get_fama_french_data(start_date="1963-1-1", end_date="2024-01-01"):
             zip_file = ZipFile(io.BytesIO(response.content))
 
             # Get the CSV file name (typically there's only one file)
-            file_name = [name for name in zip_file.namelist() if name.endswith('.CSV')][0]
+            file_name = [name for name in zip_file.namelist() if name.endswith(".CSV")][
+                0
+            ]
 
             # Read the file content
             with zip_file.open(file_name) as file:
-                content = file.read().decode('utf-8')
+                content = file.read().decode("utf-8")
 
             # Skip the header section and find where the data actually starts
-            lines = content.split('\n')
+            lines = content.split("\n")
             header_row = None
             for i, line in enumerate(lines):
-                if 'Mkt-RF' in line:
+                if "Mkt-RF" in line:
                     header_row = i
                     break
 
@@ -50,7 +52,7 @@ def get_fama_french_data(start_date="1963-1-1", end_date="2024-01-01"):
 
             # Read the CSV data, starting from the header row
             ff5 = pd.read_csv(
-                io.StringIO('\n'.join(lines[header_row:])),
+                io.StringIO("\n".join(lines[header_row:])),
                 index_col=0,
                 na_values=["-99.99", "-999"],
             )
@@ -59,7 +61,7 @@ def get_fama_french_data(start_date="1963-1-1", end_date="2024-01-01"):
             raise ValueError(f"Failed to parse data: {e}")
 
     # Clean the data
-    ff5.index = pd.to_datetime(ff5.index, format="%Y%m%d", errors='coerce')
+    ff5.index = pd.to_datetime(ff5.index, format="%Y%m%d", errors="coerce")
     ff5 = ff5.loc[~ff5.index.isna()]  # Remove rows with invalid dates
 
     # Filter by date range
@@ -81,6 +83,6 @@ def get_fama_french_data(start_date="1963-1-1", end_date="2024-01-01"):
     return ff5
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ff5 = get_fama_french_data("1983-7-1", "1993-7-5")
     exit()

@@ -24,19 +24,13 @@ dev-install:
 
 # Clean build artifacts and cache files
 clean:
-	rm -rf build/
-	rm -rf dist/
-	rm -rf $(PACKAGE).egg-info/
-	rm -rf .pytest_cache/
-	rm -rf .coverage
-	rm -rf htmlcov/
-	rm -rf docs/_build/
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
+	python -c "import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ['build', 'dist', '$(PACKAGE).egg-info', '.pytest_cache', 'htmlcov', 'docs/_build', '.coverage']]"
+	python -c "import pathlib, shutil; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').rglob('__pycache__')]"
+	python -c "import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.pyc')]"
 
 # Run tests
 test:
-	$(PYTHON) -m pytest
+	$(PYTHON) -m pytest -n 4
 
 # Run tests with coverage
 coverage:
@@ -44,7 +38,8 @@ coverage:
 
 # Format code with black
 format:
-	$(PYTHON) -m black .
+	$(UV) run ruff check --fix .
+	$(UV) run ruff format .
 
 # Build documentation
 docs:
@@ -56,6 +51,9 @@ build:
 
 # Install all dependencies (including dev)
 all: setup dev-install
+
+publish: clean build
+	twine upload dist/*
 
 # Update dependencies
 update:
