@@ -1,28 +1,37 @@
-import decimal
-from typing import Union
+"""
+Conditional Dependence Coefficient (CODEC) Implementation
 
+This module provides functions to calculate the conditional dependence coefficient (CODEC),
+a measure of conditional dependence between random variables based on an i.i.d. sample.
+
+The implementation is based on the paper "An Empirical Study on New Model-Free Multi-output 
+Variable Selection Methods" by Ansari et al.
+"""
+
+import decimal
+from typing import Union, Optional, Dict, Tuple, List, Any, Callable
 import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
 from scipy.stats import rankdata
+from functools import lru_cache
 
 
-# Helper functions for codec
-# noinspection PyPep8Naming
-def codec(Y, Z, X=None, na_rm=True) -> Union[float, dict[str, float]]:
+def codec(
+    Y: Union[np.ndarray, pd.Series, pd.DataFrame, List],
+    Z: Union[np.ndarray, pd.Series, pd.DataFrame, List],
+    X: Optional[Union[np.ndarray, pd.Series, pd.DataFrame, List]] = None,
+    na_rm: bool = True,
+) -> Union[float, Dict[str, float]]:
     """
-    The conditional dependence coefficient (CODEC) is a measure of the amount of
-    conditional dependence between a random variable Y and a random vector Z given
-    a random vector X, based on an i.i.d. sample of (Y, Z, X).
+    Calculate the conditional dependence coefficient (CODEC).
+
+    CODEC measures the amount of conditional dependence between a random variable Y
+    and a random vector Z given a random vector X, based on an i.i.d. sample of (Y, Z, X).
     The coefficient is asymptotically guaranteed to be between 0 and 1.
-    If X is None, the unconditional CODEC is calculated, which corresponds to xi(Y|Z)
-    from the paper "An Empirical Study on New Model-Free Multi-output Variable
-    Selection Methods" by Ansari et al.
 
-    This implementation translates the FOCI.codec R method to Python.
-
-    IT is codec(Y,Z) = xi(Y|Z) with the notation in "An Empirical Study on New Model-Free
-    Multi-output Variable Selection Methods" by Ansari, Lütkebohmert and Rockel.
+    If X is None, the unconditional CODEC is calculated, corresponding to xi(Y|Z)
+    from the Ansari et al. paper.
 
     Parameters
     ----------
@@ -33,12 +42,13 @@ def codec(Y, Z, X=None, na_rm=True) -> Union[float, dict[str, float]]:
     X : array-like, optional
         The conditioning variable. If None, the unconditional CODEC is calculated.
     na_rm : bool, optional
-        A boolean value indicating whether to remove NAs. The default is True.
+        Whether to remove NAs. Default is True.
 
     Returns
     -------
-    float
-        The conditional dependence coefficient.
+    float or dict
+        The conditional dependence coefficient or a dictionary of coefficients
+        when Y is a DataFrame.
 
     Raises
     ------
@@ -49,225 +59,399 @@ def codec(Y, Z, X=None, na_rm=True) -> Union[float, dict[str, float]]:
     Examples
     --------
     >>> import numpy as np
-    >>> import pandas as pd
-    >>> from mfoci import codec
     >>> n = 1000
     >>> x = np.random.rand(n, 2)
     >>> y = (x[:, 0] + x[:, 1]) % 1
-    >>> y_2 = np.random.rand(n)
-    >>> x_1_reshaped = x[:, 1].reshape(-1, 1)
-    >>> x_0_reshaped = x[:, 0].reshape(-1, 1)
+    >>> # Calculate unconditional CODEC
     >>> codec_y_x = codec(y, x)
-    >>> z = np.random.randn(n)
-    >>> z_reshaped = z.reshape(-1, 1)
-    >>> codec_y_z_x = codec(y, z_reshaped, x)
-    >>> codec_y_z = codec(y, z_reshaped)
+    >>> # Calculate conditional CODEC
+    >>> z = np.random.randn(n, 1)
+    >>> codec_y_z_x = codec(y, z, x)
     """
+    # Handle DataFrame case for Y (multiple response variables)
     if isinstance(Y, pd.DataFrame):
         results = {}
         for i in range(Y.shape[1]):
-            result = codec(Y.iloc[:, i], Z, X, na_rm)
-            results[Y.columns[i]] = result
+            results[Y.columns[i]] = codec(Y.iloc[:, i], Z, X, na_rm)
         return results
+
+    # Convert inputs to numpy arrays
+    Y = _ensure_numpy_array(Y)
+    Z = _ensure_numpy_array(Z)
+
+    # Handle unconditional case
     if X is None:
-        if isinstance(Z, list):
-            Z = np.array(Z)
-        elif isinstance(Z, pd.Series):
-            Z = Z.to_numpy()
-        if len(np.shape(Z)) == 1:
-            Z = Z.reshape(-1, 1)
-        if not isinstance(Y, np.ndarray):
-            Y = np.array(Y)
-        if not isinstance(Z, np.ndarray):
-            Z = np.array(Z)
         if len(Y) != Z.shape[0]:
             raise ValueError("Number of rows of Y and Z should be equal.")
+
         if na_rm:
-            mask = np.isfinite(Y) & np.all(np.isfinite(Z), axis=1)
-            Z = Z[mask, :]
-            Y = Y[mask]
+            # Create mask for finite values, ensuring compatible shapes
+            y_mask = np.isfinite(Y).ravel()  # Flatten to 1D
+            z_mask = np.all(np.isfinite(Z), axis=1)
+            mask = y_mask & z_mask
+
+            # Apply mask to select valid rows
+            Z = Z[mask, :]  # Keep the second dimension
+            Y = Y[mask].reshape(-1, 1)  # Reshape to maintain column vector
 
         if len(Y) < 2:
-            raise ValueError("Number of rows with no NAs should be bigger than 1.")
+            raise ValueError("Number of rows with no NAs should be at least 2.")
 
-        return estimateT(Y, Z)
+        return estimate_t(Y, Z)
 
-    if not isinstance(Y, np.ndarray):
-        Y = np.array(Y)
-    if not isinstance(X, np.ndarray):
-        X = np.array(X)
-    if not isinstance(Z, np.ndarray):
-        Z = np.array(Z)
-    if len(Y) != X.shape[0] or len(Y) != Z.shape[0] or Z.shape[0] != X.shape[0]:
+    # Convert X to numpy array for conditional case
+    X = _ensure_numpy_array(X)
+
+    # Check dimensions
+    if len(Y) != X.shape[0] or len(Y) != Z.shape[0]:
         raise ValueError("Number of rows of Y, X, and Z should be equal.")
+
+    # Remove NAs if requested
     if na_rm:
-        mask = (
-            np.isfinite(Y)
-            & np.all(np.isfinite(Z), axis=1)
-            & np.all(np.isfinite(X), axis=1)
-        )
-        Z = Z[mask, :]
-        Y = Y[mask]
-        X = X[mask, :]
+        # Create mask for finite values, ensuring compatible shapes
+        y_mask = np.isfinite(Y).ravel()  # Flatten to 1D
+        z_mask = np.all(np.isfinite(Z), axis=1)
+        x_mask = np.all(np.isfinite(X), axis=1)
+        mask = y_mask & z_mask & x_mask
+
+        # Apply mask to select valid rows
+        Z = Z[mask, :]  # Keep the second dimension
+        Y = Y[mask].reshape(-1, 1)  # Reshape to maintain column vector
+        X = X[mask, :]  # Keep the second dimension
 
     if len(Y) < 2:
-        raise ValueError("Number of rows with no NAs should be bigger than 1.")
+        raise ValueError("Number of rows with no NAs should be at least 2.")
 
-    return estimateConditionalT(Y, Z, X)
+    return estimate_conditional_t(Y, Z, X)
 
 
-# noinspection PyPep8Naming
-def estimateConditionalQ(Y, X, Z):
-    if not isinstance(X, np.ndarray):
-        X = np.array(X)
-    if not isinstance(Z, np.ndarray):
-        Z = np.array(Z)
+def estimate_conditional_q(Y: np.ndarray, X: np.ndarray, Z: np.ndarray) -> float:
+    """
+    Estimate the conditional Q statistic for CODEC calculation.
 
+    Parameters
+    ----------
+    Y : np.ndarray
+        The response variable.
+    X : np.ndarray
+        First conditioning variable.
+    Z : np.ndarray
+        Second conditioning variable.
+
+    Returns
+    -------
+    float
+        The estimated conditional Q statistic.
+    """
     n = len(Y)
     W = np.hstack((X, Z))
 
-    nn_X = cKDTree(X).query(X, k=3)[1][:, 1]
-    repeat_data = np.where(np.linalg.norm(X - X[nn_X], axis=1) == 0)[0]
-    nn_index_X = handle_repeats(nn_X, repeat_data, X)
+    # Find nearest neighbors for X and W
+    nn_index_X = find_nearest_neighbors(X)
+    nn_index_W = find_nearest_neighbors(W)
 
-    nn_W = cKDTree(W).query(W, k=3)[1][:, 1]
-    repeat_data_W = np.where(np.linalg.norm(W - W[nn_W], axis=1) == 0)[0]
-    nn_index_W = handle_repeats(nn_W, repeat_data_W, W)
+    # Calculate rank statistics
+    R_Y = rankdata(Y.ravel(), method="max")
 
-    R_Y = rankdata(Y, method="max")
+    # Calculate minimums
     minimum_1 = np.minimum(R_Y, R_Y[nn_index_W])
     minimum_2 = np.minimum(R_Y, R_Y[nn_index_X])
-    Q_n = np.sum(minimum_1 - minimum_2) / n**2
+
+    # Calculate Q statistic
+    Q_n = np.sum(minimum_1 - minimum_2) / (n**2)
+
     return Q_n
 
 
-# noinspection PyPep8Naming
-def estimateConditionalS(Y, X):
-    if not isinstance(X, np.ndarray):
-        X = np.array(X)
+def estimate_conditional_s(Y: np.ndarray, X: np.ndarray) -> float:
+    """
+    Estimate the conditional S statistic for CODEC calculation.
+
+    Parameters
+    ----------
+    Y : np.ndarray
+        The response variable.
+    X : np.ndarray
+        The conditioning variable.
+
+    Returns
+    -------
+    float
+        The estimated conditional S statistic.
+    """
     n = len(Y)
 
-    nn_X = cKDTree(X).query(X, k=3)[1][:, 1]
-    repeat_data = np.where(np.linalg.norm(X - X[nn_X], axis=1) == 0)[0]
-    nn_index_X = handle_repeats(nn_X, repeat_data, X)
+    # Find nearest neighbors for X
+    nn_index_X = find_nearest_neighbors(X)
 
-    R_Y = rankdata(Y, method="max")
-    S_n = np.sum(R_Y - np.minimum(R_Y, R_Y[nn_index_X])) / n**2
+    # Calculate rank statistics
+    R_Y = rankdata(Y.ravel(), method="max")
+
+    # Calculate S statistic
+    S_n = np.sum(R_Y - np.minimum(R_Y, R_Y[nn_index_X])) / (n**2)
+
     return S_n
 
 
-# noinspection PyPep8Naming
-def estimateConditionalT(Y, Z, X):
-    S = estimateConditionalS(Y, X)
-    if S == 0:
-        return 1
+def estimate_conditional_t(Y: np.ndarray, Z: np.ndarray, X: np.ndarray) -> float:
+    """
+    Estimate the conditional T statistic (the conditional CODEC).
+
+    Parameters
+    ----------
+    Y : np.ndarray
+        The response variable.
+    Z : np.ndarray
+        The primary conditioning variable.
+    X : np.ndarray
+        The secondary conditioning variable.
+
+    Returns
+    -------
+    float
+        The estimated conditional T statistic (CODEC value).
+    """
+    S = estimate_conditional_s(Y, X)
+
+    if np.isclose(S, 0):
+        return 1.0
     else:
-        q = estimateConditionalQ(Y, X, Z)
+        q = estimate_conditional_q(Y, X, Z)
         return q / S
 
 
-# noinspection PyPep8Naming
-def estimateQ(Y, X):
-    # Convert X to a numpy array if it is not already
-    X = np.array(X)
+def estimate_q(Y: np.ndarray, X: np.ndarray) -> float:
+    """
+    Estimate the Q statistic for unconditional CODEC calculation.
 
+    Parameters
+    ----------
+    Y : np.ndarray
+        The response variable.
+    X : np.ndarray
+        The conditioning variable.
+
+    Returns
+    -------
+    float
+        The estimated Q statistic.
+    """
     n = len(Y)
-    # Use cKDTree for nearest neighbor search
-    tree = cKDTree(X)
-    distances, nn_indices = tree.query(X, k=3)
 
-    # Remove the first nearest neighbor for each x, which is x itself
-    nn_index_X = nn_indices[:, 1]
+    # Find nearest neighbors for X
+    nn_index_X = find_nearest_neighbors(X)
 
-    # Find all data points that are not unique
-    repeat_data = np.where(distances[:, 1] == 0)[0]
+    # Calculate rank statistics
+    R_Y = rankdata(Y.ravel(), method="max")
+    L_Y = rankdata(-Y.ravel(), method="max")
 
-    # Create a DataFrame to manage repeated data
-    df_X = pd.DataFrame({"id": repeat_data, "group": nn_indices[repeat_data, 0]})
+    # Convert to decimal for numerical stability
+    L_Y_dec = np.array([decimal.Decimal(str(float(val))) for val in L_Y])
+    R_Y_dec = np.array([decimal.Decimal(str(float(val))) for val in R_Y])
 
-    # Function to select a random nearest neighbor
-    def random_nn(ids):
-        if len(ids) > 0:
-            return np.random.choice(ids)
-        return None
+    # Get ranks at nearest neighbor indices
+    R_Y_nn = R_Y_dec[nn_index_X]
 
-    df_X["rnn"] = df_X.groupby("group")["id"].transform(random_nn)
-    nn_index_X[repeat_data] = df_X["rnn"].to_numpy()
-
-    # Nearest neighbors with ties
-    ties = np.where(distances[:, 1] == distances[:, 2])[0]
-    ties = np.setdiff1d(ties, repeat_data)
-
-    def helper_ties(a):
-        a_point = X[a, :].reshape(1, -1)
-        rest_points = np.delete(X, a, axis=0)
-        rest_indices = np.delete(np.arange(len(X)), a)
-
-        distances_to_others = np.linalg.norm(rest_points - a_point, axis=1)
-        min_indices = np.where(distances_to_others == distances_to_others.min())[0]
-
-        # Adjust indices since we removed one point
-        adjusted_indices = rest_indices[min_indices]
-        random_choice = np.random.choice(adjusted_indices)
-        return random_choice
-
-    if len(ties) > 0:
-        tie_choice = [helper_ties(a) for a in ties]
-        nn_index_X[ties] = np.array(tie_choice)
-
-    R_Y = rankdata(Y, method="max")
-    L_Y = rankdata(-Y, method="max")
-    L_Y_dec = np.array([decimal.Decimal(float(val)) for val in L_Y])
-    R_Y_dec = np.array([decimal.Decimal(float(val)) for val in R_Y])
-    R_Y_nn = R_Y_dec[nn_index_X]  # R_Y at nearest neighbor indices
-    min_values = np.minimum(R_Y_dec, R_Y_nn)  # Element-wise minimum
+    # Calculate minimums and L_Y squared
+    min_values = np.minimum(R_Y_dec, R_Y_nn)
     L_Y_squared = L_Y_dec**2
-    Q_n = np.mean(min_values - L_Y_squared / n) / n
+    n_dec = decimal.Decimal(str(n))
+
+    # Calculate Q statistic
+    Q_n = np.mean(min_values - L_Y_squared / n_dec) / n
+
     return float(Q_n)
 
 
-# noinspection PyPep8Naming
-def estimateS(Y):
-    n = len(Y)
-    L_Y = rankdata(-Y, method="max")
-    L_Y_decimal = np.array([decimal.Decimal(float(val)) for val in L_Y])
-    n_decimal = decimal.Decimal(n)
+def estimate_s(Y: np.ndarray) -> float:
+    """
+    Estimate the S statistic for unconditional CODEC calculation.
 
-    S_n = np.sum(L_Y_decimal * (n_decimal - L_Y_decimal)) / (n_decimal**3)
+    Parameters
+    ----------
+    Y : np.ndarray
+        The response variable.
+
+    Returns
+    -------
+    float
+        The estimated S statistic.
+    """
+    n = len(Y)
+
+    # Calculate rank statistics
+    L_Y = rankdata(-Y.ravel(), method="max")
+
+    # Convert to decimal for numerical stability
+    L_Y_dec = np.array([decimal.Decimal(str(float(val))) for val in L_Y])
+    n_dec = decimal.Decimal(str(n))
+
+    # Calculate S statistic
+    S_n = np.sum(L_Y_dec * (n_dec - L_Y_dec)) / (n_dec**3)
+
     return float(S_n)
 
 
-# noinspection PyPep8Naming
-def estimateT(Y, X):
-    S = estimateS(Y)
-    if S == 0:
-        return 1
+def estimate_t(Y: np.ndarray, X: np.ndarray) -> float:
+    """
+    Estimate the T statistic (the unconditional CODEC).
+
+    Parameters
+    ----------
+    Y : np.ndarray
+        The response variable.
+    X : np.ndarray
+        The conditioning variable.
+
+    Returns
+    -------
+    float
+        The estimated T statistic (CODEC value).
+    """
+    S = estimate_s(Y)
+
+    if np.isclose(S, 0):
+        return 1.0
     else:
-        q = estimateQ(Y, X)
+        q = estimate_q(Y, X)
         return q / S
 
 
-# noinspection PyPep8Naming
-def handle_repeats(nn_index, repeat_data, X):
+def find_nearest_neighbors(X: np.ndarray) -> np.ndarray:
+    """
+    Find the nearest neighbors for each point in X, handling repeats and ties.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        The data points.
+
+    Returns
+    -------
+    np.ndarray
+        Indices of nearest neighbors.
+    """
+    # Ensure X is a numpy array
+    X = np.asarray(X)
+
+    # Use cKDTree for nearest neighbor search
+    tree = cKDTree(X)
+    distances, nn_indices = tree.query(X, k=min(3, X.shape[0]))
+
+    # Get the second nearest neighbor (first is the point itself)
+    nn_index_X = (
+        nn_indices[:, 1].copy()
+        if nn_indices.shape[1] > 1
+        else np.zeros(X.shape[0], dtype=int)
+    )
+
+    # Find data points that are not unique (zero distance to nearest neighbor)
+    repeat_data = np.where(distances[:, 1] == 0)[0] if distances.shape[1] > 1 else []
+
+    # Handle repeated data points using DataFrame approach (like original code)
     if len(repeat_data) > 0:
-        for i in repeat_data:
-            unique_indices = np.where(np.linalg.norm(X[i] - X, axis=1) != 0)[0]
-            nn_index[i] = np.random.choice(unique_indices)
-    return nn_index
+        # Create a DataFrame to manage repeated data
+        df_X = pd.DataFrame({"id": repeat_data, "group": nn_indices[repeat_data, 0]})
+
+        # Function to select a random nearest neighbor
+        def random_nn(group_ids):
+            if len(group_ids) > 0:
+                return np.random.choice(group_ids)
+            return None
+
+        # Apply to each group
+        df_X["rnn"] = df_X.groupby("group")["id"].transform(random_nn)
+
+        # Update nearest neighbor indices
+        for idx, rnn in zip(repeat_data, df_X["rnn"]):
+            if rnn is not None:
+                nn_index_X[idx] = rnn
+
+    # Handle ties (equal distances to second and third nearest neighbors)
+    if nn_indices.shape[1] > 2:
+        ties = np.where(distances[:, 1] == distances[:, 2])[0]
+        ties = np.setdiff1d(ties, repeat_data)
+
+        if len(ties) > 0:
+            for a in ties:
+                # Take current point
+                a_point = X[a].reshape(1, -1)
+
+                # Get all other points
+                rest_points = np.delete(X, a, axis=0)
+                rest_indices = np.delete(np.arange(X.shape[0]), a)
+
+                # Find distances to all other points
+                distances_to_others = np.linalg.norm(rest_points - a_point, axis=1)
+
+                # Find points at minimum distance
+                min_indices = np.where(
+                    distances_to_others == distances_to_others.min()
+                )[0]
+
+                # Adjust indices and randomly select one
+                adjusted_indices = rest_indices[min_indices]
+                nn_index_X[a] = np.random.choice(adjusted_indices)
+
+    return nn_index_X
 
 
-# Example usage
+def _ensure_numpy_array(data: Any) -> np.ndarray:
+    """
+    Convert input data to a properly formatted numpy array.
+
+    Parameters
+    ----------
+    data : array-like
+        Input data to convert.
+
+    Returns
+    -------
+    np.ndarray
+        Converted numpy array.
+    """
+    if isinstance(data, list):
+        data = np.array(data)
+    elif isinstance(data, pd.Series):
+        data = data.to_numpy()
+    elif isinstance(data, pd.DataFrame):
+        data = data.to_numpy()
+
+    # Ensure 2D array for matrix data
+    if not isinstance(data, np.ndarray):
+        data = np.array(data)
+
+    # Reshape 1D array to column vector
+    if len(data.shape) == 1:
+        data = data.reshape(-1, 1)
+
+    return data
+
+
 if __name__ == "__main__":
-    n = 1000
-    x = np.random.rand(n, 2)
-    y = (x[:, 0] + x[:, 1]) % 1
-    y_2 = np.random.rand(n)
-    x_1_reshaped = x[:, 1].reshape(-1, 1)
-    x_0_reshaped = x[:, 0].reshape(-1, 1)
-    # print(codec(y, x_1_reshaped, x_0_reshaped))
-    codec_y_x = codec(y, x)
-    codec_y_2_x = codec(y_2, x)
-    z = np.random.randn(n)
-    z_reshaped = z.reshape(-1, 1)
-    # print(codec(y, x, z_reshaped))
-    # print(codec(y, z_reshaped, x))
+    # Example usage and tests
+    np.random.seed(42)  # For reproducibility
+
+    # Generate example data
+    n_samples = 1000
+    X = np.random.rand(n_samples, 2)
+    Y_dependent = (X[:, 0] + X[:, 1]) % 1  # Y depends on X
+    Y_independent = np.random.rand(n_samples)  # Y independent of X
+    Z = np.random.randn(n_samples, 1)
+
+    # Calculate various CODEC values
+    print("CODEC between Y_dependent and X:", codec(Y_dependent, X))
+    print("CODEC between Y_independent and X:", codec(Y_independent, X))
+    print("Conditional CODEC (Y_dependent | Z, X):", codec(Y_dependent, Z, X))
+
+    # Test with pandas DataFrame
+    df_Y = pd.DataFrame({"dependent": Y_dependent, "independent": Y_independent})
+    print("\nCODEC with multiple response variables:")
+    print(codec(df_Y, X))
+
+    # Verify edge cases
+    try:
+        print("\nTesting mismatched dimensions:")
+        codec(Y_dependent, X[:500])
+    except ValueError as e:
+        print(f"Caught expected error: {e}")

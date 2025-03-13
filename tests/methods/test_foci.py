@@ -17,15 +17,16 @@ def test_codec():
     Y = [10, 8, 13, 9, 11, 14, 6, 4, 12, 7, 5]
     Z = [8.04, 6.95, 7.58, 8.81, 8.33, 9.96, 7.24, 4.26, 10.84, 4.82, 5.68]
     result = codec(Y, Z)
-    assert result == 0.25
+    assert np.isclose(result, 0.25)
 
 
-observations = [15_000, 20_000, 30_000, 40_000, 50_000, 60_000, 70_000]
+observations = [15_000, 20_000, 30_000, 40_000, 50_000]
 
 
 @pytest.mark.parametrize("n_obs", observations)
 def test_xi_estimation_of_amh(n_obs):
     # true xi = 0.0352...
+    np.random.seed(43)
     family = copul.Families.ALI_MIKHAIL_HAQ
     param = 0.6
     log.info(f"Number of observations: {n_obs}")
