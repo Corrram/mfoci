@@ -1,7 +1,6 @@
 import pytest
 import pandas as pd
-import numpy as np
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 # First, create a module-level mock for the logger
 mock_logger = MagicMock()
@@ -111,9 +110,9 @@ class TestMFOCI:
         )
 
         # With report_insignificant=True, should select more factors
-        assert len(selected_with_report) > len(
-            selected_without_report
-        ), f"Expected more factors with report_insignificant=True, got {len(selected_with_report)} vs {len(selected_without_report)}"
+        assert len(selected_with_report) > len(selected_without_report), (
+            f"Expected more factors with report_insignificant=True, got {len(selected_with_report)} vs {len(selected_without_report)}"
+        )
 
     @patch("mfoci.methods.mfoci_func.xi_q_n_calculate")
     @patch("builtins.print")

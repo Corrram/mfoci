@@ -17,6 +17,7 @@ cryptography==44.0.2 ; platform_machine != 'ppc64le' and platform_machine != 's3
 cycler==0.12.1
 docutils==0.21.2
 exceptiongroup==1.2.2 ; python_full_version < '3.11'
+execnet==2.1.1
 fonttools==4.56.0
 frozendict==2.4.6
 id==1.5.0
@@ -55,6 +56,7 @@ pyparsing==3.2.1
 pytest==8.3.5
 pytest-cov==6.0.0
 pytest-pycharm==0.7.0
+pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
 pytz==2025.1
 pywin32-ctypes==0.2.3 ; platform_machine != 'ppc64le' and platform_machine != 's390x' and sys_platform == 'win32'

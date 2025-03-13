@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # This is the critical part - patch the correct path where the function is defined
 # Make sure this import path matches where the function is actually defined

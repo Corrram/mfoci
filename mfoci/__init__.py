@@ -13,4 +13,5 @@ __all__ = [
     "load_stock_returns",
     "load_volatility_index",
     "xi_q_n_calculate",
+    "select_factors",
 ]

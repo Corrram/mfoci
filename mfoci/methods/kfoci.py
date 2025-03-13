@@ -10,6 +10,7 @@ def kfoci(factors, response_vars, r_path, **kwargs):
 
     :param factors: pd.DataFrame
     :param response_vars: pd.DataFrame
+    :param r_path: str
 
     :return: list
     """
@@ -17,7 +18,7 @@ def kfoci(factors, response_vars, r_path, **kwargs):
     path = pathlib.Path(__file__).parent
     factors.to_csv(f"{path}/x.csv", index=False)
     response_vars.to_csv(f"{path}/y.csv", index=False)
-    filename = str(path / "kfoci.R")
+    filename = str(path / "kfoci_legacy.R")
     cmd_list = [r_path, "--vanilla", filename, path]
     if "kernel" in kwargs:
         kernel = kwargs["kernel"]

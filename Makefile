@@ -43,14 +43,16 @@ format:
 
 # Build documentation
 docs:
-	cd docs && $(PYTHON) -m sphinx.cmd.build -b html . _build/html
+	$(PYTHON) -c "import pathlib; [p.unlink() for p in pathlib.Path('docs/source').rglob('*.rst') if p.name != 'index.rst']"
+	cd docs && sphinx-apidoc -o ./source ../mfoci
+	cd docs && $(PYTHON) -m sphinx -b html ./source build/html
 
 # Build package distribution
 build:
 	$(UV) build
 
 # Install all dependencies (including dev)
-all: setup dev-install
+all: clean format docs upgrade test
 
 publish: clean build
 	twine upload dist/*

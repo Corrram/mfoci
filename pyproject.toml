@@ -1,6 +1,6 @@
 [project]
 name = "mfoci"
-version = "0.2.1"
+version = "0.2.2"
 description = "Financial market analysis tool implementing the MFOCI algorithm for factor selection"
 authors = [
     {name = "Marcus Rockel", email = "corram@outlook.de"},

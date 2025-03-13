@@ -1,7 +1,6 @@
-import pytest
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_almost_equal, assert_array_equal
+from numpy.testing import assert_array_equal
 
 from mfoci.methods.multivar_chatterjee import (
     xi_q_n_calculate,
