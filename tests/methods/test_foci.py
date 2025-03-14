@@ -31,7 +31,7 @@ def test_xi_estimation_of_amh(n_obs):
     param = 0.6
     log.info(f"Number of observations: {n_obs}")
     xi = compute_xi_from_data(family, param, n_obs)
-    assert 0.02 <= xi <= 0.05
+    assert 0.02 <= xi <= 0.05, f"Estimated xi: {xi}, observations: {n_obs}"
 
 
 @pytest.mark.parametrize("n_obs", observations)

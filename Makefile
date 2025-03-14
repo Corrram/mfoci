@@ -1,4 +1,4 @@
-.PHONY: setup clean install test lint format docs build all update upgrade
+.PHONY: setup clean install test lint format docs build all upgrade
 
 # Default Python interpreter
 PYTHON = python
@@ -57,10 +57,6 @@ all: clean format docs upgrade test
 publish: clean build
 	twine upload dist/*
 
-# Update dependencies
-update:
-	$(UV) sync --extra dev
-
 upgrade:
-	$(UV) sync --active --extra dev
+	$(UV) sync --extra dev
 	$(UV) export --format requirements-txt --extra dev --no-hashes --output-file requirements.txt > $(if $(filter $(OS),Windows_NT),NUL,/dev/null) 2>&1
