@@ -6,3 +6,4 @@
 *.pyc
 /.venv/
 /mfoci.egg-info/
+.coverage
