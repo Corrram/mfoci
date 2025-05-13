@@ -4,17 +4,16 @@ Conditional Dependence Coefficient (CODEC) Implementation
 This module provides functions to calculate the conditional dependence coefficient (CODEC),
 a measure of conditional dependence between random variables based on an i.i.d. sample.
 
-The implementation is based on the paper "An Empirical Study on New Model-Free Multi-output 
+The implementation is based on the paper "An Empirical Study on New Model-Free Multi-output
 Variable Selection Methods" by Ansari et al.
 """
 
 import decimal
-from typing import Union, Optional, Dict, Tuple, List, Any, Callable
+from typing import Union, Optional, Dict, List, Any
 import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
 from scipy.stats import rankdata
-from functools import lru_cache
 
 
 def codec(

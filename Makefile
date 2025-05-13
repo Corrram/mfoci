@@ -48,8 +48,10 @@ docs:
 	cd docs && $(PYTHON) -m sphinx -b html ./source build/html
 
 # Build package distribution
-build:
+build: clean
 	$(UV) build
+	twine check dist/*
+	uv pip install -e .
 
 # Install all dependencies (including dev)
 all: clean format docs upgrade test
@@ -58,5 +60,6 @@ publish: clean build
 	twine upload dist/*
 
 upgrade:
-	$(UV) sync --extra dev
+	@echo "Upgrading dev dependencies in root package..."
+	$(UV) sync --upgrade --extra dev
 	$(UV) export --format requirements-txt --extra dev --no-hashes --output-file requirements.txt > $(if $(filter $(OS),Windows_NT),NUL,/dev/null) 2>&1
